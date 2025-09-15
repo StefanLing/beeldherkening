@@ -1,0 +1,68 @@
+# -*- coding: utf-8 -*-
+import cv2
+import numpy as np
+
+# --- Instellingen ---
+#IMG_PATH = r"C:\Users\stefa\Documents\beeldherkenning\IMG_3734.JPG"
+IMG_PATH = r"C:\Users\stefa\Documents\beeldherkenning\04_frame102.JPG"
+MIN_PIXELS = 5000           # minimale grootte van de vlek
+KERNEL_SIZE = 3             # morfologie kernel (3 of 5 werkt vaak goed)
+OPEN_ITERS = 1              # opening om kleine rommel weg te halen
+
+# --- Helpers ---
+def largest_component_area(mask_bool):
+    """Geef de grootte (aantal pixels) van de grootste 8-verbonden component in het masker."""
+    # Zorg voor uint8 (0/255)
+    mask = np.uint8(mask_bool) * 255
+
+    # Morfologische opening: verwijder losse kruimels
+    kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (KERNEL_SIZE, KERNEL_SIZE))
+    if OPEN_ITERS > 0:
+        mask = cv2.morphologyEx(mask, cv2.MORPH_OPEN, kernel, iterations=OPEN_ITERS)
+
+    # Verbonden componenten
+    num_labels, labels, stats, centroids = cv2.connectedComponentsWithStats(mask, connectivity=8)
+    if num_labels <= 1:
+        return 0  # alleen achtergrond
+
+    # stats[:, cv2.CC_STAT_AREA] geeft oppervlak; index 0 is achtergrond
+    areas = stats[1:, cv2.CC_STAT_AREA]  # skip achtergrond
+    return int(areas.max()) if areas.size > 0 else 0
+
+# --- Lees beeld ---
+img = cv2.imread(IMG_PATH)
+if img is None:
+    print("Kon de afbeelding niet laden.")
+    raise SystemExit
+
+# ---------- Kleur-ranges (gegeven in RGB, check in BGR) ----------
+# Bruin (jouw aangescherpte waarden):
+brown_mask = (
+    (img[:, :, 0] >= 0)   & (img[:, :, 0] <= 50) &   # B
+    (img[:, :, 1] >= 0)   & (img[:, :, 1] <= 50) &   # G
+    (img[:, :, 2] >= 0)   & (img[:, :, 2] <= 50)     # R
+)
+
+# Wit (strakke witte pixels):
+white_mask = (
+    (img[:, :, 0] >= 240) & (img[:, :, 0] <= 255) &  # B
+    (img[:, :, 1] >= 240) & (img[:, :, 1] <= 255) &  # G
+    (img[:, :, 2] >= 240) & (img[:, :, 2] <= 255)    # R
+)
+
+# --- Grootste vlek per kleur ---
+brown_area = largest_component_area(brown_mask)
+white_area = largest_component_area(white_mask)
+
+printed = False
+if brown_area >= MIN_PIXELS:
+    print("bruine eend")
+    printed = True
+if white_area >= MIN_PIXELS:
+    print("witte eend")
+    printed = True
+
+if not printed:
+    print("geen witte of bruine eend gevonden")
+
+    

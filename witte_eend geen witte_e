@@ -1,0 +1,27 @@
+# -*- coding: utf-8 -*-
+"""
+Spyder Editor
+
+Dit script controleert of er een pixel aanwezig is die bijna wit is.
+"""
+
+import cv2
+import numpy as np
+
+# Lees de afbeelding
+img = cv2.imread(r"C:\Users\stefa\Documents\beeldherkenning\IMG_3734.JPG")
+
+# Controleer of de afbeelding geladen is
+if img is None:
+    print("Kon de afbeelding niet laden.")
+    exit()
+
+# Voorwaarde: R > 200, G > 200, B > 200
+# In OpenCV is de volgorde BGR, dus we controleren (B > 200, G > 200, R > 200)
+mask = (img[:,:,0] > 200) & (img[:,:,1] > 200) & (img[:,:,2] > 200)
+
+# Check of er minstens één pixel is die voldoet
+if np.any(mask):
+    print("wit_eend")
+else:
+    print("geen witte eend gevonden")

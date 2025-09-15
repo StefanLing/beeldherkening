@@ -1,0 +1,54 @@
+# -*- coding: utf-8 -*-
+"""
+Checkt of er minstens 30 pixels in de afbeelding zitten die binnen
+- 'bruine eend' RGB-range vallen: (0-50, 0-50, 0-30)
+- 'witte eend'  RGB-range vallen: (220-240, 220-240, 220-240)
+
+Let op: OpenCV gebruikt BGR, dus we letten op B, G, R in die volgorde.
+"""
+
+import cv2
+import numpy as np
+
+# Lees de afbeelding
+img = cv2.imread(r"C:\Users\stefa\Documents\beeldherkenning\04_frame102.JPG")
+if img is None:
+    print("Kon de afbeelding niet laden.")
+    raise SystemExit
+
+# ---------- RANGES (gegeven in RGB, maar we checken in BGR) ----------
+# Bruin: RGB in (0-50, 0-50, 0-30)  -> B in 0-30, G in 0-50, R in 0-50
+brown_mask = (
+    (img[:, :, 0] >= 0)   & (img[:, :, 0] <= 30)  &   # B
+    (img[:, :, 1] >= 0)   & (img[:, :, 1] <= 50)  &   # G
+    (img[:, :, 2] >= 0)   & (img[:, :, 2] <= 50)      # R
+)
+
+# Wit: RGB in (220-240, 220-240, 220-240) -> B,G,R in 220-240
+white_mask = (
+    (img[:, :, 0] >= 220) & (img[:, :, 0] <= 240) &   # B
+    (img[:, :, 1] >= 220) & (img[:, :, 1] <= 240) &   # G
+    (img[:, :, 2] >= 220) & (img[:, :, 2] <= 240)     # R
+)
+
+# Tel het aantal pixels per klasse
+brown_count = int(np.count_nonzero(brown_mask))
+white_count = int(np.count_nonzero(white_mask))
+
+# Drempel
+MIN_PIXELS = 20000
+
+
+# Print resultaten
+printed = False
+if brown_count >= MIN_PIXELS:
+    print("bruine eend")
+    printed = True
+if white_count >= MIN_PIXELS:
+    print("witte eend")
+    printed = True
+
+if not printed:
+    print("geen witte of bruine eend gevonden")
+
+

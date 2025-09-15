@@ -1,0 +1,85 @@
+# -*- coding: utf-8 -*-
+import cv2
+import numpy as np
+
+IMG_PATH = r"C:\Users\stefa\Documents\beeldherkenning\IMG_3734.JPG"
+WINDOW   = "Afbeelding (RGB + HSV) – ESC of kruisje om te sluiten"
+
+# Max weergavegrootte
+MAX_W, MAX_H = 1200, 800
+
+img = cv2.imread(IMG_PATH)
+if img is None:
+    raise SystemExit("Kon de afbeelding niet laden.")
+
+Himg, Wimg = img.shape[:2]
+
+# Schaalfactor om te passen binnen MAX_W x MAX_H
+scale = min(MAX_W / Wimg, MAX_H / Himg, 1.0)
+dispW, dispH = int(Wimg * scale), int(Himg * scale)
+
+# Displaybeeld (geschaald als nodig)
+base_disp = cv2.resize(img, (dispW, dispH), interpolation=cv2.INTER_AREA) if scale < 1.0 else img.copy()
+
+# Precompute HSV
+hsv_img = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)
+
+state = {"mouse_xy": (0, 0)}
+
+def on_mouse(event, x, y, flags, param):
+    if event == cv2.EVENT_MOUSEMOVE:
+        x_c = max(0, min(x, dispW - 1))
+        y_c = max(0, min(y, dispH - 1))
+        param["mouse_xy"] = (x_c, y_c)
+
+cv2.namedWindow(WINDOW, cv2.WINDOW_AUTOSIZE)
+cv2.setMouseCallback(WINDOW, on_mouse, param=state)
+
+while True:
+    disp = base_disp.copy()
+
+    # Map display->originele pixel
+    x_disp, y_disp = state["mouse_xy"]
+    x_src = int(round(x_disp / scale))
+    y_src = int(round(y_disp / scale))
+    x_src = max(0, min(x_src, Wimg - 1))
+    y_src = max(0, min(y_src, Himg - 1))
+
+    # RGB uit originele afbeelding
+    b, g, r = img[y_src, x_src]
+
+    # HSV uit precompute
+    h, s, v = hsv_img[y_src, x_src]
+    h_deg = int(h * 2)  # 0..360 graden
+    s_pct = int(round(s / 255.0 * 100))
+    v_pct = int(round(v / 255.0 * 100))
+    h_txt = f"{h_deg}°" if s_pct > 10 else "--"
+
+    # Teksten voorbereiden
+    rgb_text = f"RGB: R={r} G={g} B={b}"
+    hsv_text = f"HSV: H={h_txt} S={s_pct}% V={v_pct}%"
+
+    # Plaatsing linksonder (HSV iets erboven)
+    baseline_y = disp.shape[0] - 10
+    cv2.putText(disp, rgb_text, (10, baseline_y),
+                cv2.FONT_HERSHEY_SIMPLEX, 0.7, (255,255,255), 2, cv2.LINE_AA)
+    cv2.putText(disp, hsv_text, (10, baseline_y - 25),
+                cv2.FONT_HERSHEY_SIMPLEX, 0.7, (255,255,255), 2, cv2.LINE_AA)
+
+    # Marker op cursorpositie
+    cv2.circle(disp, (x_disp, y_disp), 4, (255,255,255), -1, cv2.LINE_AA)
+
+    cv2.imshow(WINDOW, disp)
+
+    # ESC of kruisje om te sluiten
+    key = cv2.waitKey(20) & 0xFF
+    if key == 27:
+        break
+    if cv2.getWindowProperty(WINDOW, cv2.WND_PROP_VISIBLE) < 1:
+        break
+
+cv2.destroyAllWindows()
+
+
+
+

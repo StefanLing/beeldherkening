@@ -1,1 +1,10 @@
 
+import cv2
+
+img  = cv2.imread(r"C:\Users\stefa\Documents\beeldherkenning\w_eend.JPG")
+gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+blur = cv2.GaussianBlur(gray, (5,5), 1.0)        # ruis verminderen
+edges = cv2.Canny(blur, 50, 150)                 # pas drempels aan
+
+cv2.imwrite(r"C:\Users\stefa\Documents\beeldherkenning\eend_edges.jpg", edges)
+print("Randbeeld opgeslagen als eend_edges.jpg")

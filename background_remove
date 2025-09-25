@@ -1,0 +1,27 @@
+from rembg import remove
+import cv2
+import numpy as np
+import matplotlib.pyplot as plt
+
+# Laad de afbeelding
+input_path = 'C:\\Users\\stefa\\Documents\\beeldherkenning\\1.4\\04_frame106.jpg'
+img = cv2.imread(input_path)
+
+# Zet de afbeelding om naar RGB (rembg werkt met RGB in plaats van BGR)
+img_rgb = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+
+# Verwijder de achtergrond met rembg
+output = remove(img_rgb)
+
+# Zet de afbeelding met transparante achtergrond om naar een numpy array
+output = np.array(output)
+
+# Maak de transparante achtergrond zwart
+# Check voor de alpha (transparantie) en zet de transparante pixels naar zwart
+output_with_black_bg = np.dstack([output[:, :, :3], np.ones_like(output[:, :, 3]) * 255])
+output_with_black_bg[output[:, :, 3] == 0] = [0, 0, 0, 255]  # Zet transparante pixels naar zwart
+
+# Toon het resultaat in Matplotlib (transparante achtergrond wordt zwart weergegeven)
+plt.imshow(output_with_black_bg)
+plt.axis('off')  # Verberg de assen
+plt.show()
